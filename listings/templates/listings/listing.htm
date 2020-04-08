@@ -1,0 +1,158 @@
+<title>{{ listing.title }} | CarZone</title>
+<style>
+#map{
+  width: 534px;
+  height: 330px;
+}
+</style>
+{% if listing.user_authenticated %}
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDNYFzufFNdmzKAtT0sixE6l-FC_LqhrqQ&callback=initMap" async defer></script>
+{% endif %}
+
+{% if listing.type == "SELL" %}
+  Продажа
+{% else %}
+  Покупка
+{% endif %}
+<h2 style='margin: 0;'>{{ listing.title }}</h2>
+<b><a href='{% url "seller_profile" listing.seller.username %}'>
+  {{ listing.seller.username }}</a></b>
+({{ listing.seller.rating }})
+<p>Просмотры: {{ listing.views }}</p>
+<p>{{ listing.description }}</p>
+{% if listing.seller.is_current_user %}
+<p>
+  {% if can_bump %}<a href='{% url "listing_bump" listing.id %}'>Поднять</a>{% endif %}
+  <a href='{% url "listing_edit" listing.id %}'>Редактировать</a>
+  <a href='{% url "listing_delete" listing.id %}'>Удалить</a>
+</p>
+{% endif %}
+<div>
+  <p style='margin-bottom: 5px;'><b>{{ listing.contact.name }}</b> <small>контактное лицо</small></p>
+  <p style='margin: 0;'><i>Телефон:</i></p>
+    <ul style='margin: 0; margin-bottom: 5px;'>
+    {% for operator, phone in listing.contact.phone_numbers.items %}
+    <li>
+      {{ operator }}:
+      <a class='phone-number' id='phoneNum{{ forloop.counter }}'>
+        {{ phone }}
+      </a>
+    </li>
+  {% endfor %}
+  </ul>
+  <p>
+    {% if listing.contact.call_time_start == '00:00' and listing.contact.call_time_end == '23:59' %}
+      Звонить в любое время
+    {% else %}
+      Звонить с {{ listing.contact.call_time_start }} до
+      {{ listing.contact.call_time_end }}
+    {% endif %}
+  </p>
+
+  {% if listing.contact.social_contacts %}
+  <p style='margin: 0;'><i>Контакт в соц. сетях:</i>
+    <ul style='margin: 0;'>
+    {% for network, link in listing.contact.social_contacts.items %}
+      <li>{{ network }}: {{ link }}</li>
+    {% endfor %}
+    </ul>
+  </p>
+  {% endif %}
+
+  {% if listing.contact.contact_emails %}
+  <p><i>Электронная почта:</i>
+    <ul>
+    {% for email in listing.contact.contact_emails %}
+      <li>{{ email }}</li>
+    {% endfor %}
+    </ul>
+  </p>
+  {% endif %}
+
+  {% if listing.images %}
+  <div style='display: none; margin-bottom: 10px;'
+    id='bigImageContainer'>
+    <img style='border: 20px solid #ececec;' id='bigImage'>
+  </div>
+  {% for image in listing.images %}
+  <img onclick='showImage("{{ image.file.url }}")'
+    style='height: 100px;' src='{{ image.thumbnail.url }}'>
+  {% endfor %}
+  {% endif %}
+
+  <p style='margin-bottom: 5px;'>
+    <b>{{ listing.address.string }}</b> <small>адрес</small>
+  </p>
+  {% if listing.address.lat%}
+    {% if listing.user_authenticated %}
+    <div id='map'></div>
+    {% else %}
+    <img id='map' src='{{ listing.address.static }}'>
+    {% endif %}
+  {% endif %}
+</div>
+<div style='
+  margin-top: 15px;
+  background-color: green;
+  padding: 5px 10px;
+  color: white;
+  display: inline-block;
+'>
+  {{ listing.price }} руб.
+</div>
+<script>
+{% if listing.user_authenticated %}
+const pos = {lat: {{ listing.address.lat }}, lng: {{ listing.address.lng }}};
+var map;
+function initMap() {
+  map = new google.maps.Map(
+    document.getElementById('map'), {
+      zoom: 14,
+      center: pos,
+      streetViewControl: false,
+      mapTypeControl: false,
+      fullscreenControl: false,
+      zoomControlOptions: {
+        position: google.maps.ControlPosition.RIGHT_TOP
+      },
+    }
+  );
+  const marker = new google.maps.Marker({position: pos, map: map});
+}
+initMap();
+{% endif %}
+
+function isMobile() {
+  return (navigator.userAgent.match(/Android/i) ||
+    navigator.userAgent.match(/webOS/i) ||
+    navigator.userAgent.match(/iPhone/i) ||
+    navigator.userAgent.match(/iPad/i) ||
+    navigator.userAgent.match(/iPod/i) ||
+    navigator.userAgent.match(/BlackBerry/i) ||
+    navigator.userAgent.match(/Windows Phone/i)
+  );
+}
+
+function showImage(src){
+  imgContainer = document.getElementById('bigImageContainer')
+  img = document.getElementById('bigImage')
+
+  if (imgContainer.style.display == 'none') {
+    imgContainer.style.display = 'block';
+  } else if (img.dataset.image == src) {
+    imgContainer.style.display = 'none';
+  }
+  img.src = src;
+  img.dataset.image = src
+}
+
+(function() {
+  if (isMobile()) {
+    const phoneNumbers = document.getElementsByClassName("phone-number");
+    for (let i = 0; i < phoneNumbers.length; i++) {
+      el = phoneNumbers[i];
+      document.getElementById(el.id).href = "tel://" + el.innerHTML;
+    }
+  }
+})();
+</script>

@@ -1,0 +1,9 @@
+<title>Задать вопрос | CarZone</title>
+<h2 style='margin-bottom: 5px;'>Задать вопрос</h2>
+<form enctype='multipart/form-data' method='POST'>
+  {% csrf_token %}
+  <table>
+    {{ form.as_table }}
+  </table>
+  <p><input type='submit'></p>
+</form>

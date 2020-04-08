@@ -1,0 +1,87 @@
+<title>{{ question.text|truncatechars:40 }} | CarZone</title>
+<p>Вопрос: <b>{{ question.text }}</b></p>
+{% if question.attached_image %}
+<img src='{{ question.attached_image.url }}'>
+{% endif %}
+<p>Тэги: <i>{{ question.tags }}</i></p>
+{% if question.date_edited and answers %}
+{% elif self_question %}
+<p>Действия:
+  {% if not question.date_edited %}
+    <a href='{% url "question_edit" question.id %}'>Редактировать</a>
+  {% endif %}
+  {% if not answers and not question.selected_answer %}
+    <a href='{% url "question_delete" question.id %}'>Удалить</a>
+  {% endif %}
+</p>
+{% endif %}
+<p>Прсмотры: {{ views }}</p>
+{% if question.selected_answer %}
+<h3>Выбранный ответ:</h3>
+<div style='border-left: 5px solid palevioletred; padding-left: 5px;'>
+  <b>{{ question.selected_answer.username }}</b>
+  <p>{{ question.selected_answer.text }}</p>
+  <p>
+    <a href='{% url "answer_rating" question.selected_answer.id %}?upvote=1'>+</a>
+    <span style='font-weight: bolder; color:
+      {% if question.selected_answer.rating < 0 %}
+        crimson
+      {% elif question.selected_answer.rating > 0 %}
+        darkgreen
+      {% else %}
+        black
+      {% endif %}
+    '>{{ question.selected_answer.rating }}</span>
+    <a href='{% url "answer_rating" question.selected_answer.id %}?upvote=0'>-</a>
+  </p>
+</div>
+{% endif %}
+{% if answers and authenticated %}
+  <h3>Ответы:</h3>
+  {% for answer in answers %}
+    <b>{{ answer.username }}</b>
+    {% if answer.date_edited %}
+    <i>Ответ изменён {{ answer.date_edited }}</i>
+    {% endif %}
+    <p style='margin-top: 0;'>
+      <a href='{% url "answer_rating" answer.id %}?upvote=1'>+</a>
+      <span style='font-weight: bolder; color:
+        {% if answer.rating < 0 %}
+          crimson
+        {% elif answer.rating > 0 %}
+          limegreen
+        {% else %}
+          black
+        {% endif %}
+      '>{{ answer.rating }}</span>
+      <a href='{% url "answer_rating" answer.id %}?upvote=0'>-</a>
+      {{ answer.text }}
+      {% if self_question and not question.selected_answer %}
+      <a href='{% url "answer_select" answer.id %}'>Выбрать в качестве ответа</a>
+      {% endif %}
+    </p>
+  {% endfor %}
+{% elif authenticated and not question.selected_answer %}
+  <h3>Нет ответов</h3>
+{% endif %}
+{% if user_answer %}
+<p>
+  {% if user_answer.date_edited %}
+    Ваш ответ (изменён): {{ user_answer.text }}
+  {% elif user_answer == question.selected_answer %}
+    Ваш ответ: {{ user_answer.text }}
+  {% else %}
+    Ваш ответ (<a href='{% url "answer_edit" user_answer.id %}'>редактировать</a>):
+    {{ user_answer.text }}
+  {% endif %}
+  {% if user_answer.rating < 5 and user_answer != question.selected_answer %}
+  <a href='{% url "answer_delete" user_answer.id %}'>Удалить</a>
+  {% endif %}
+</p>
+{% elif authenticated and not question.selected_answer and not self_question %}
+<form method='POST'>
+  {% csrf_token %}
+  <p>Добавить ответ: {{ answer_form.answer_text }}</p>
+  <input type='submit' value='Добавить'>
+</form>
+{% endif %}

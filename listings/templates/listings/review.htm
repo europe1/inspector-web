@@ -1,0 +1,8 @@
+<title>Редактировать отзыв | CarZone</title>
+<form action='{% url "review_edit" review.id %}' method='POST'>
+  {% csrf_token %}
+  <p>Оценка: <input type='number' name='rating' value='{{ review.rating }}'></p>
+  <p>Текст отзыва: <textarea rows=4 disabled>{{ review.text }}</textarea></p>
+  <p>Дополнить отзыв: <textarea type='text' name='add_text'></textarea></p>
+  <p><input type='submit' value='Сохранить'></p>
+</form>

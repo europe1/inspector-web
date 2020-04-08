@@ -1,0 +1,7 @@
+<title>Подтверждение удаления | CarZone</title>
+Вы уверены, что хотите удалить этот вопрос?
+<form method='POST'>
+  {% csrf_token %}
+  <input type='submit' value='Да'>
+  <a href='{% url "question" question.id %}'>Нет</a>
+</form>

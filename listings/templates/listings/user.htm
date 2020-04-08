@@ -1,0 +1,6 @@
+<title>Регистрация | CarZone</title>
+<form method=POST>
+  {% csrf_token %}
+  {{ user_form.as_p }}
+  <input type='submit' value='Зарегистрироваться'>
+</form>

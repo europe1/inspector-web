@@ -1,0 +1,201 @@
+<title>Создать объявление | CarZone</title>
+<h2>Создать объявление</h2>
+<form enctype='multipart/form-data' method='POST' id='listingForm'>
+  {% csrf_token %}
+  <table>
+    {{ form.as_table }}
+  </table>
+  <fieldset>
+    <legend>
+      <select id='contactSelect' name='contact'>
+        {% for contact in saved_contacts %}
+          <option id='contact{{ forloop.counter }}'
+            value='contact{{ forloop.counter }}'
+            {% if edit_contact == forloop.counter %}
+            selected
+            {% endif %}
+            onclick='loadSavedUser({{ forloop.counter0 }})'>
+            {{ contact.name }}
+          </option>
+        {% endfor %}
+        {% if saved_contacts|length < 5 %}
+          <option value='new' onclick='clearContact()'>Новое контактное лицо</option>
+        {% endif %}
+      </select>
+    </legend>
+    <i>Имя:</i>
+    <p>{{ contact_form.contact_name }}</p>
+    <i>Телефонный номер:</i>
+    <p>{{ contact_form.phone_operator1 }} {{ contact_form.phone_number1 }}</p>
+    <p>{{ contact_form.phone_operator2 }} {{ contact_form.phone_number2 }}</p>
+    <p>{{ contact_form.phone_operator3 }} {{ contact_form.phone_number3 }}</p>
+    <p>{{ contact_form.phone_operator4 }} {{ contact_form.phone_number4 }}</p>
+    <i>Часы для звонков:</i>
+    <p>{{ contact_form.call_time_start }} - {{ contact_form.call_time_end }}</p>
+    <i>Контакт в соц. сети:</i>
+    <p>{{ contact_form.social_network1 }} {{ contact_form.social_contact1 }}</p>
+    <p>{{ contact_form.social_network2 }} {{ contact_form.social_contact2 }}</p>
+    <p>{{ contact_form.social_network3 }} {{ contact_form.social_contact3 }}</p>
+    <p>{{ contact_form.social_network4 }} {{ contact_form.social_contact4 }}</p>
+    <i>Электронная почта:</i>
+    <p>{{ contact_form.contact_email1 }} {{ contact_form.contact_email2 }}</p>
+  </fieldset>
+  <br>
+  <fieldset>
+    <legend>Address</legend>
+    {{ address_form.as_p }}
+  </fieldset>
+  <br>
+  <input type='submit' value='{% if edit_contact %}Сохранить{% else %}Создать{% endif %}'>
+</form>
+{{ saved_contacts|json_script:"contactsData" }}
+<script>
+function contactsToJson(contactsData) {
+  let contactsJson = [];
+  const contactsArray = JSON.parse(contactsData);
+  for (let i = 0; i < contactsArray.length; i++) {
+    let contact = contactsArray[i];
+    contact.phone_numbers = JSON.parse(contact.phone_numbers);
+    contact.social_contacts = JSON.parse(contact.social_contacts);
+    contactsJson.push(contact);
+  }
+  return contactsJson;
+}
+
+const form = {
+  'name': document.getElementById('id_contact_name'),
+  'operator1': document.getElementById('id_phone_operator1'),
+  'operator2': document.getElementById('id_phone_operator2'),
+  'operator3': document.getElementById('id_phone_operator3'),
+  'operator4': document.getElementById('id_phone_operator4'),
+  'phone1': document.getElementById('id_phone_number1'),
+  'phone2': document.getElementById('id_phone_number2'),
+  'phone3': document.getElementById('id_phone_number3'),
+  'phone4': document.getElementById('id_phone_number4'),
+  'ctStart': document.getElementById('id_call_time_start'),
+  'ctEnd': document.getElementById('id_call_time_end'),
+  'social1': document.getElementById('id_social_network1'),
+  'social2': document.getElementById('id_social_network2'),
+  'social3': document.getElementById('id_social_network3'),
+  'social4': document.getElementById('id_social_network4'),
+  'contact1': document.getElementById('id_social_contact1'),
+  'contact2': document.getElementById('id_social_contact2'),
+  'contact3': document.getElementById('id_social_contact3'),
+  'contact4': document.getElementById('id_social_contact4'),
+  'email1': document.getElementById('id_contact_email1'),
+  'email2': document.getElementById('id_contact_email2'),
+}
+
+const contacts = contactsToJson(document.getElementById("contactsData").innerHTML);
+
+function clearContact() {
+  for (let formField in form) {
+    form[formField].value = '';
+  }
+}
+
+function loadSavedUser(userNum) {
+  const refUser = contacts[userNum];
+  const emails = refUser.contact_emails.split(",");
+  clearContact();
+
+  form.name.value = refUser.name;
+
+  for (let field in refUser.phone_numbers) {
+    let operator = form.operator4;
+    let phone = form.phone4;
+
+    if (form.operator1.value) {
+      if (form.operator2.value){
+        if (!form.operator3.value) {
+          operator = form.operator3;
+          phone = form.phone3;
+        }
+      } else {
+        operator = form.operator2;
+        phone = form.phone2;
+      }
+    } else {
+      operator = form.operator1;
+      phone = form.phone1;
+    }
+
+    operator.value = field;
+    phone.value = refUser.phone_numbers[field];
+  }
+
+  form.ctStart.value = refUser.call_time.split('-')[0]
+  form.ctEnd.value = refUser.call_time.split('-')[1]
+
+  for (let field in refUser.social_contacts) {
+    let social = form.social4;
+    let contact = form.contact4;
+
+    if (form.social1.value) {
+      if (form.social2.value){
+        if (!form.social3.value) {
+          social = form.social3;
+          contact = form.contact3;
+        }
+      } else {
+        social = form.social2;
+        contact = form.contact2;
+      }
+    } else {
+      social = form.social1;
+      contact = form.contact1;
+    }
+
+    social.value = field;
+    contact.value = refUser.social_contacts[field];
+  }
+
+  for (let i = 0; i < emails.length; i++) {
+    let email = form.email1;
+
+    if (email.value) {
+      email = form.email2;
+    }
+
+    email.value = emails[i];
+  }
+}
+
+function checkPairedField(e, pairedId) {
+  // Don't check operator value
+  if (pairedId.indexOf('operator') === 0) {
+    return;
+  }
+
+  const pairedField = form[pairedId];
+  // Can later change implementation
+  if (e.target.value) {
+    pairedField.required = true;
+  } else if (pairedId !== 'phone1') {
+    // phone1 field is always required
+    pairedField.required = false;
+  }
+}
+
+(function() {
+  const pairedFields = [
+    'operator1', 'phone1', 'operator2', 'phone2', 'operator3', 'phone3',
+    'operator4', 'phone4', 'social1', 'contact1', 'social2', 'contact2',
+    'social3', 'contact3', 'social4', 'contact4'
+  ]
+  for (let i = 0; i < pairedFields.length - 1; i += 2) {
+    form[ pairedFields[i] ].addEventListener('change', function(event) {
+      checkPairedField(event, pairedFields[i+1]);
+    });
+    form[ pairedFields[i+1] ].addEventListener('change', function(event) {
+      checkPairedField(event, pairedFields[i]);
+    });
+  }
+
+  const contactSelect = document.getElementById('contactSelect');
+  let selectedValue = contactSelect.options[contactSelect.selectedIndex].value;
+  if (selectedValue !== 'new') {
+    loadSavedUser(parseInt(selectedValue[selectedValue.length-1]) - 1);
+  }
+})();
+</script>

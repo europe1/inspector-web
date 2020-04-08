@@ -1,0 +1,14 @@
+<title>Редактировать {% if answer %}ответ{% else %}вопрос{% endif %} | CarZone</title>
+<h3>Редактировать ответ</h3>
+<form enctype='multipart/form-data'
+action=
+{% if answer %}
+'{% url "answer_edit" id %}'
+{% else %}
+'{% url "question_edit" id %}'
+{% endif %}
+method='POST'>
+  {% csrf_token %}
+  {{ form.as_p }}
+  <p><input type='submit' value='Сохранить'></p>
+</form>

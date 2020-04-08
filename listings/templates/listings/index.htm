@@ -1,0 +1,116 @@
+<title>Доска объявлений | CarZone</title>
+<h2 style='display: inline-block;'>CarZone Доска объявлений</h2>
+{% if is_seller %}
+  <div style='position: absolute; right: 35px; top: 3px;'>
+    <a href='{% url "seller_profile" seller.username %}'>{{ seller.username }}</a>
+    <a href='{% url "logout" %}'>Выйти</a>
+  </div>
+  <a style='margin-left: 10px;' href='{% url "listing_create" %}'>
+    Добавить объявление&#10010;
+  </a>
+{% elif authenticated %}
+  <div style='position: absolute; right: 35px; top: 3px;'>
+    {{ seller.username }} <a href='{% url "logout" %}'>Выйти</a>
+  </div>
+  <a style='margin-left: 10px;' href='{% url "seller_add" %}'>
+    Стать продавцом
+  </a>
+{% else %}
+<div style='position: absolute; right: 35px; top: 3px;'>
+  <a href='{% url "login" %}'>Войти</a>
+</div>
+{% endif %}
+<form method='GET'>
+  <input type='text' name='search'>
+  <input type='submit' value='Искать'>
+</form>
+<table width=100% border style='border-collapse: collapse;'>
+  <thead>
+    <tr>
+      <th>
+        <a href='?sort={% if sort == "title" %}-{% endif %}title'
+          style='text-decoration: none; color: black;'>Заголовок</a>
+      </th>
+      <th>Тип объявления</th>
+      <th>Пользователь</th>
+      <th>
+        <a href='?sort={% if sort == "price" %}-{% endif %}price'
+          style='text-decoration: none; color: black;'>Цена,
+          <a id='currencyChange' href='javascript:void()'
+        style='text-decoration: none; color: royalblue;'>руб.</a>
+      </th>
+      <th>
+        <a href='?sort={% if sort == "-date_added" %}date_added{% else %}-date_added{% endif %}'
+          style='text-decoration: none; color: black;'>Добавлено</a>
+      </th>
+      <th>Ссылка</th>
+    </tr>
+  </thead>
+  <tbody>
+{% for listing in listings %}
+    <tr align=center>
+      <td class='title'>{{ listing.title }}</td>
+      <td>
+        {% if listing.type == "SELL" %}
+          Продажа
+        {% else %}
+          Покупка
+        {% endif %}
+      </td>
+      <td>
+        <a href="{% url 'seller_profile' listing.seller.username %}">
+          {{ listing.seller.username }}</a>
+        ({{ listing.seller.rating }})
+      </td>
+      <td id='priceTag{{ forloop.counter }}' class='listing-price'
+        data-original-price='{{ listing.price }}'>
+        {{ listing.price }}
+      </td>
+      <td>
+        {% now 'd.m.Y' as today %}
+        {% if listing.date_added|date == today %}
+        сегодня
+        {% else %}
+        {{ listing.date_added|date }}
+        {% endif %}
+      </td>
+      <td><a href="{% url 'listing' listing.id %}">Посмотреть</a></td>
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+{% if not listings %}
+<h3 align='center'>Ничего не найдено</h3>
+{% endif %}
+<div style='margin-top: 20px; text-align: center;'>
+{% for page in pages %}
+  <a {% if forloop.counter != current_page %}href='?p={{ forloop.counter }}'{% endif %}>
+    {{ forloop.counter }}
+  </a>
+{% endfor %}
+</div>
+<script>
+let currentCurrency = 'BYN';
+let exchangeRate = 0.47;
+const currencyChangeLink = document.getElementById('currencyChange');
+let priceElements = [];
+
+window.onload = function() {
+  priceElements = document.getElementsByClassName('listing-price');
+}
+
+currencyChangeLink.addEventListener('click', function() {
+  currentCurrency = currentCurrency === 'BYN' ? 'USD' : 'BYN';
+  currencyChangeLink.innerHTML = currentCurrency === 'BYN' ? 'руб.' : '$';
+  if (currentCurrency === 'USD') {
+    for (let i = 0; i < priceElements.length; i++) {
+      let price = parseFloat(priceElements[i].innerHTML) * exchangeRate;
+      document.getElementById(priceElements[i].id).innerHTML = price.toFixed(2);
+    }
+  } else {
+    for (let j = 0; j < priceElements.length; j++) {
+      document.getElementById(priceElements[j].id).innerHTML = priceElements[j].dataset.originalPrice;
+    }
+  }
+})
+</script>

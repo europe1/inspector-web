@@ -1,0 +1,44 @@
+<title>{{ seller.username }} | CarZone</title>
+{% if seller.avatar %}
+<img style='vertical-align: top;' src='{{ seller.avatar.url }}'>
+{% endif %}
+<div style='display: inline-block;'>
+  <h2 style='margin: 0;'>{{ seller.username }}</h2>
+  {% if seller.show_name or self %}
+    <p>{{ seller.full_name }}</p>
+  {% endif %}
+  <p>Рейтинг: <b>{{ seller.rating }}</b></p>
+</div>
+<h3>{% if listings %}Объявления{% else %}Нету объявлений{% endif %}</h3>
+
+{% for listing in listings %}
+  <p><a href='{% url "listing" listing.id %}'>{{ listing.title }}</a></p>
+{% endfor %}
+{% if authenticated %}
+<hr>
+<h3>{% if reviews %}Отзывы{% else %}Нету отзывов{% endif %}</h3>
+{% for review in reviews %}
+  <p>
+    <h4>{{ review.username }} - {{ review.stars|safe }}</h4>
+    {{ review.text }}
+  </p>
+{% endfor %}
+{% if review %}
+<hr>
+<b>Ваша оценка - {{ review.stars|safe }}</b>
+<p>{{ review.text }}</p>
+  {% if review.additional_text %}
+    <p><i>Дополнено {{ review.edit_date }}</i></p>
+    <p>{{ review.additional_text }}</p>
+  {% else %}
+    <a href='{% url "review_edit" review.id %}'>Редактировать</a>
+  {% endif %}
+{% elif not self %}
+<h4 style='margin-top: 30px;'>Добавить отзыв</h4>
+<form method=POST>
+  {% csrf_token %}
+  {{ review_form.as_p }}
+  <input type='submit' value='Добавить'>
+</form>
+{% endif %}
+{% endif %}
